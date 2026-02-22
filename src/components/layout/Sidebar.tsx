@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/lib/context/AuthContext";
 import {
     Building2,
     LayoutDashboard,
@@ -13,7 +14,9 @@ import {
     UploadCloud,
     Settings,
     HelpCircle,
-    LogOut
+    LogOut,
+    User as UserIcon,
+    ShieldCheck
 } from "lucide-react";
 
 const navigation = [
@@ -31,6 +34,9 @@ const mainTools = [
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const { role, logout } = useAuth();
+
+    const isAdmin = role === "admin";
 
     return (
         <div className="flex h-full w-64 flex-col border-r border-border bg-card">
@@ -65,29 +71,31 @@ export default function Sidebar() {
                     </nav>
                 </div>
 
-                <div>
-                    <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                        Data Hub
-                    </p>
-                    <nav className="space-y-1">
-                        {mainTools.map((item) => {
-                            const isActive = pathname === item.href;
-                            return (
-                                <Link
-                                    key={item.name}
-                                    href={item.href}
-                                    className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors group ${isActive
-                                            ? 'bg-primary/20 text-primary border border-primary/20'
-                                            : 'text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent'
-                                        }`}
-                                >
-                                    <item.icon className={`h-5 w-5 mr-3 shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'}`} />
-                                    {item.name}
-                                </Link>
-                            );
-                        })}
-                    </nav>
-                </div>
+                {isAdmin && (
+                    <div>
+                        <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                            Data Hub (Editor)
+                        </p>
+                        <nav className="space-y-1">
+                            {mainTools.map((item) => {
+                                const isActive = pathname === item.href;
+                                return (
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors group ${isActive
+                                                ? 'bg-primary/20 text-primary border border-primary/20'
+                                                : 'text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent'
+                                            }`}
+                                    >
+                                        <item.icon className={`h-5 w-5 mr-3 shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'}`} />
+                                        {item.name}
+                                    </Link>
+                                );
+                            })}
+                        </nav>
+                    </div>
+                )}
 
             </div>
 
@@ -103,14 +111,16 @@ export default function Sidebar() {
                     </Link>
                 </nav>
                 <div className="mt-4 px-3 flex items-center">
-                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center mr-3">
-                        <span className="text-xs font-bold text-primary">AD</span>
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${isAdmin ? 'bg-primary/20 text-primary' : 'bg-emerald-500/20 text-emerald-600'}`}>
+                        {isAdmin ? <ShieldCheck className="h-4 w-4" /> : <UserIcon className="h-4 w-4" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">Admin User</p>
-                        <p className="text-xs text-muted-foreground truncate">admin@astra.com</p>
+                        <p className="text-sm font-medium text-foreground truncate">{isAdmin ? "Admin User" : "Viewer"}</p>
+                        <p className="text-xs text-muted-foreground truncate">{isAdmin ? "editor@astra.com" : "viewer@astra.com"}</p>
                     </div>
-                    <LogOut className="h-5 w-5 text-muted-foreground hover:text-foreground cursor-pointer transition-colors" />
+                    <button onClick={logout} className="p-1.5 rounded-md hover:bg-destructive/10 group transition-colors">
+                        <LogOut className="h-5 w-5 text-muted-foreground group-hover:text-destructive transition-colors" />
+                    </button>
                 </div>
             </div>
         </div>
