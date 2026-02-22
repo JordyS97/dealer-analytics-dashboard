@@ -32,10 +32,24 @@ export async function batchUploadToFirestore(
             // Create an auto-generated document ID reference
             const docRef = doc(collection(db, collectionName));
 
-            // Clean undefined values which Firestore rejects
-            const cleanItem = Object.fromEntries(
-                Object.entries(item).filter(([_, v]) => v !== undefined)
-            );
+            // Deep clean strictly for Firestore compatibility
+            const cleanItem: Record<string, any> = {};
+            for (const [key, value] of Object.entries(item)) {
+                if (value === undefined) continue;
+
+                // Firestore flatly rejects NaN values. Convert to 0.
+                if (typeof value === "number" && isNaN(value)) {
+                    cleanItem[key] = 0;
+                    continue;
+                }
+
+                // Firestore flatly rejects Invalid Date objects.
+                if (value instanceof Date && isNaN(value.getTime())) {
+                    continue;
+                }
+
+                cleanItem[key] = value;
+            }
 
             batch.set(docRef, cleanItem);
         });
