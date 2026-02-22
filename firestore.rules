@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Base Security Rules for Analytics Dashboard
+    // Currently open to allow the data upload functionality to work without strict Firebase Auth 
+    // Recommended: Add Firebase Auth and change to `allow read, write: if request.auth != null;` later.
+    match /sales_overview/{document=**} {
+      allow read, write: if true;
+    }
+    
+    match /detail_salespeople/{document=**} {
+      allow read, write: if true;
+    }
+    
+    match /prospect_acquisition/{document=**} {
+      allow read, write: if true;
+    }
+
+    // Default deny for anything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
