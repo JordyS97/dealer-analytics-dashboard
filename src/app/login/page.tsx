@@ -48,7 +48,7 @@ export default function LoginPage() {
                                 placeholder="Enter password..."
                             />
                         </div>
-                        {error && <p className="text-xs text-destructive mt-1 ml-1 font-medium animate-pulse">Invalid password. Try 'admin123' or 'viewer123'.</p>}
+                        {error && <p className="text-xs text-destructive mt-1 ml-1 font-medium animate-pulse">Invalid password. Try &apos;admin123&apos; or &apos;viewer123&apos;.</p>}
                     </div>
 
                     <button
