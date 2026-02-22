@@ -106,9 +106,12 @@ export default function UploadPage() {
             setDetectedType("UNKNOWN");
             alert(`🎉 Successfully uploaded ${summary.validData.length} records to the ${collectionName} database!`);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Firebase upload error:", error);
-            alert("Failed to upload to the database. Check console for details, and ensure CORS/Firestore permissions allow writes.");
+
+            // Extract the actual Firebase error message to display in the UI
+            const errorMessage = error?.message || "Unknown Firebase Error occurred.";
+            alert(`Upload Failed: ${errorMessage}\n\nIf you see 'Missing or insufficient permissions', please ensure you have applied the firestore.rules to your Firebase Console.`);
         } finally {
             setIsUploading(false);
         }
