@@ -1,6 +1,18 @@
 import { z } from "zod";
 import { parse, isValid } from "date-fns";
 
+// Helper to cleanly parse messy excel numbers like "20,000" or "-"
+export const parseMixedNumber = (val: any): number => {
+    if (val === null || val === undefined || val === "") return 0;
+    if (typeof val === "number") return isNaN(val) ? 0 : val;
+    if (typeof val === "string") {
+        const clean = val.replace(/[^0-9.-]+/g, "");
+        const parsed = Number(clean);
+        return isNaN(parsed) ? 0 : parsed;
+    }
+    return 0;
+};
+
 // Helper to cleanly parse varying date formats (dd/mm/yyyy or mm/dd/yyyy)
 export const parseMixedDate = (dateStr: string | number | Date | undefined | null): Date | null => {
     if (!dateStr) return null;
@@ -41,9 +53,9 @@ export const SalesOverviewSchema = z.object({
     "Kec": z.string().optional(),
     "Kode Pos": z.union([z.string(), z.number()]).optional(),
     "KTP No": z.union([z.string(), z.number()]).optional(),
-    "DP Aktual": z.coerce.number().optional().default(0),
-    "Tenor3": z.coerce.number().optional().default(0),
-    "Cicilan": z.coerce.number().optional().default(0),
+    "DP Aktual": z.any().transform(parseMixedNumber),
+    "Tenor3": z.any().transform(parseMixedNumber),
+    "Cicilan": z.any().transform(parseMixedNumber),
     "Tipe ATPM": z.string().optional(),
     "Warna": z.string().optional(),
     "Tipe Var Plus": z.string().optional(),
@@ -80,13 +92,13 @@ export const DetailSalespeopleSchema = z.object({
     "Jenis Konsumen": z.string().optional(),
     "Metode Pembelian": z.string().optional(),
     "Nama Fincoy/Perusahaan MOP": z.string().optional(),
-    "DP": z.coerce.number().optional().default(0),
-    "Tenor": z.coerce.number().optional().default(0),
-    "Angsuran": z.coerce.number().optional().default(0),
+    "DP": z.any().transform(parseMixedNumber),
+    "Tenor": z.any().transform(parseMixedNumber),
+    "Angsuran": z.any().transform(parseMixedNumber),
     "Tipe Motor": z.string().optional(),
-    "Harga OFR": z.coerce.number().optional().default(0),
-    "Diskon Total": z.coerce.number().optional().default(0),
-    "Net Sales": z.coerce.number().optional().default(0),
+    "Harga OFR": z.any().transform(parseMixedNumber),
+    "Diskon Total": z.any().transform(parseMixedNumber),
+    "Net Sales": z.any().transform(parseMixedNumber),
     "Status Delivery": z.string().optional(),
 }).passthrough(); // Allowing passthrough for many other fields so they don't block upload
 

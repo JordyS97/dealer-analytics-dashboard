@@ -62,12 +62,15 @@ export default function UploadPage() {
             let errorCount = 0;
             const validData: any[] = [];
 
-            json.forEach((row) => {
+            json.forEach((row, index) => {
                 const result = schema.safeParse(row);
                 if (result.success) {
                     validCount++;
                     validData.push(result.data);
                 } else {
+                    if (errorCount === 0) {
+                        console.log(`Row ${index} validation error:`, result.error);
+                    }
                     errorCount++;
                 }
             });
