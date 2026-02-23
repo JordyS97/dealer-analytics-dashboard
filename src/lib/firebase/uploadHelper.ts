@@ -1,11 +1,11 @@
 import { db } from "@/lib/firebase/config";
 import { collection, writeBatch, doc } from "firebase/firestore";
 
-// Firestore imposes a hard limit of 500 writes per batch
-const MAX_BATCH_SIZE = 500;
+// Firestore imposes a hard limit of 500 writes, but we use 400 to be extremely safe against off-by-one errors.
+const MAX_BATCH_SIZE = 400;
 
 /**
- * Uploads an array of objects to a specific Firestore collection in chunks of 500.
+ * Uploads an array of objects to a specific Firestore collection in chunks of 400.
  * 
  * @param collectionName The name of the Firestore collection
  * @param data Array of validated objects to upload
@@ -21,41 +21,34 @@ export async function batchUploadToFirestore(
     const total = data.length;
     let uploaded = 0;
 
-    // Chunk the data array into pieces of 500
+    // chunk the data array
     for (let i = 0; i < total; i += MAX_BATCH_SIZE) {
         const chunk = data.slice(i, i + MAX_BATCH_SIZE);
-
-        // Create a new batch
         const batch = writeBatch(db);
 
         chunk.forEach((item) => {
-            // Create an auto-generated document ID reference
             const docRef = doc(collection(db, collectionName));
-
-            // Deep clean strictly for Firestore compatibility
             const cleanItem: Record<string, any> = {};
             for (const [key, value] of Object.entries(item)) {
                 if (value === undefined) continue;
-
-                // Firestore flatly rejects NaN values. Convert to 0.
                 if (typeof value === "number" && isNaN(value)) {
                     cleanItem[key] = 0;
                     continue;
                 }
-
-                // Firestore flatly rejects Invalid Date objects.
-                if (value instanceof Date && isNaN(value.getTime())) {
-                    continue;
-                }
-
+                if (value instanceof Date && isNaN(value.getTime())) continue;
                 cleanItem[key] = value;
             }
-
             batch.set(docRef, cleanItem);
         });
 
-        // Commit the batch to Firestore
-        await batch.commit();
+        console.log(`Sending batch ${i} to ${i + chunk.length}...`);
+        try {
+            await batch.commit();
+        } catch (error: any) {
+            console.error(`Batch commit failed at row ${i}:`, error);
+            throw new Error(`Upload aborted at row ${i} due to Firebase error: ${error.message}`);
+        }
+
         uploaded += chunk.length;
 
         if (progressCallback) {
