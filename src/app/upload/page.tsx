@@ -20,6 +20,7 @@ export default function UploadPage() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState({ uploaded: 0, total: 0 });
+    const [etaSeconds, setEtaSeconds] = useState<number | null>(null);
     const [summary, setSummary] = useState<{ total: number; valid: number; errors: number; validData: any[] } | null>(null);
 
     const detectFileType = (headers: string[]): FileType => {
@@ -90,6 +91,7 @@ export default function UploadPage() {
 
         setIsUploading(true);
         setUploadProgress({ uploaded: 0, total: summary.validData.length });
+        setEtaSeconds(null);
 
         try {
             // Map file type to Firestore Collection Name
@@ -98,10 +100,19 @@ export default function UploadPage() {
             if (detectedType === "DETAIL_SALESPEOPLE") collectionName = "detail_salespeople";
             if (detectedType === "PROSPECT_ACQUISITION") collectionName = "prospect_acquisition";
 
+            const startTime = Date.now();
             await batchUploadToFirestore(
                 collectionName,
                 summary.validData,
-                (uploaded, total) => setUploadProgress({ uploaded, total })
+                (uploaded, total) => {
+                    setUploadProgress({ uploaded, total });
+                    const elapsed = (Date.now() - startTime) / 1000;
+                    if (elapsed > 0 && uploaded > 0) {
+                        const velocity = uploaded / elapsed;
+                        const remaining = total - uploaded;
+                        setEtaSeconds(Math.max(0, Math.ceil(remaining / velocity)));
+                    }
+                }
             );
 
             setSummary(null);
@@ -233,11 +244,17 @@ export default function UploadPage() {
                         </button>
 
                         {isUploading && (
-                            <div className="flex-1 max-w-sm h-2 bg-muted rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-emerald-500 transition-all duration-300"
-                                    style={{ width: `${(uploadProgress.uploaded / uploadProgress.total) * 100}%` }}
-                                />
+                            <div className="flex-1 max-w-sm flex flex-col gap-1">
+                                <div className="flex justify-between text-xs text-muted-foreground font-medium px-1">
+                                    <span>Progress: {Math.round((uploadProgress.uploaded / uploadProgress.total) * 100)}%</span>
+                                    <span>{etaSeconds !== null ? `~${etaSeconds}s remaining` : 'Calculating...'}</span>
+                                </div>
+                                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-emerald-500 transition-all duration-300"
+                                        style={{ width: `${(uploadProgress.uploaded / uploadProgress.total) * 100}%` }}
+                                    />
+                                </div>
                             </div>
                         )}
                     </div>
