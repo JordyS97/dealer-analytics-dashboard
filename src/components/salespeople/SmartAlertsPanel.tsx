@@ -34,7 +34,7 @@ export default function SmartAlertsPanel({ data }: SmartAlertsPanelProps) {
         let teamTotalBeban = 0;
         let teamTotalUnits = 0;
 
-        const salesmenMap: Record<string, { units: number; beban: number }> = {};
+        const salesmenMap: Record<string, { units: number; beban: number; dealer: string }> = {};
         const motorMap: Record<string, { mtd: number; lastMtd: number }> = {};
 
         let overdueDeliveryCount = 0;
@@ -45,6 +45,7 @@ export default function SmartAlertsPanel({ data }: SmartAlertsPanelProps) {
             const dateBstk = parseRowDate(row["Tgl BSTK"] || row["Tanggal BSTK"]);
             const beban = parseNumber(row["Beban Dealer"] || row["Diskon Total"]);
             const salesman = row["Nama Salesman"] || "Unknown";
+            const dealer = row["Nama Dealer"] || "Unknown";
             const motor = row["Tipe Motor"] || "Unknown";
 
             const statusDelivery = String(row["Status Delivery"] || "").toLowerCase();
@@ -55,7 +56,7 @@ export default function SmartAlertsPanel({ data }: SmartAlertsPanelProps) {
 
             // Global Maps for MTD
             if (dateBilling && dateBilling >= currentMonthStart && dateBilling <= today) {
-                if (!salesmenMap[salesman]) salesmenMap[salesman] = { units: 0, beban: 0 };
+                if (!salesmenMap[salesman]) salesmenMap[salesman] = { units: 0, beban: 0, dealer };
                 salesmenMap[salesman].units++;
                 salesmenMap[salesman].beban += beban;
 
@@ -87,24 +88,38 @@ export default function SmartAlertsPanel({ data }: SmartAlertsPanelProps) {
         let bestSalesman: any = null;
         let maxUnits = 0;
 
-        Object.entries(salesmenMap).forEach(([name, stat]) => {
+        const salesmenArray = Object.entries(salesmenMap).map(([name, stat]) => {
             const avgBeban = stat.units > 0 ? stat.beban / stat.units : 0;
+            return { name, dealer: stat.dealer, units: stat.units, beban: stat.beban, avgBeban };
+        });
 
-            // Alert 1: Over-discount
-            if (avgBeban > 500000) {
-                const pctAbove = teamAvgBeban > 0 ? ((avgBeban - teamAvgBeban) / teamAvgBeban) * 100 : 0;
-                newAlerts.push({
-                    type: "critical",
-                    icon: AlertCircle,
-                    text: `${name} · avg Rp ${avgBeban.toLocaleString(undefined, { maximumFractionDigits: 0 })}/unit — ${pctAbove.toFixed(1)}% above team avg · ${stat.units} units`
-                });
+        const dealerOvercounters: Record<string, any[]> = {};
+
+        salesmenArray.forEach((s) => {
+            // Alert 1: Over-discount tracking (grouped by dealer)
+            if (s.avgBeban > 500000) {
+                if (!dealerOvercounters[s.dealer]) dealerOvercounters[s.dealer] = [];
+                dealerOvercounters[s.dealer].push(s);
             }
 
             // Find Star Performer
-            if (avgBeban < teamAvgBeban && stat.units > maxUnits) {
-                maxUnits = stat.units;
-                bestSalesman = { name, ...stat, avgBeban };
+            if (s.avgBeban < teamAvgBeban && s.units > maxUnits) {
+                maxUnits = s.units;
+                bestSalesman = s;
             }
+        });
+
+        // Add top 3 overdiscounters per dealer
+        Object.values(dealerOvercounters).forEach(list => {
+            list.sort((a, b) => b.avgBeban - a.avgBeban);
+            list.slice(0, 3).forEach(s => {
+                const pctAbove = teamAvgBeban > 0 ? ((s.avgBeban - teamAvgBeban) / teamAvgBeban) * 100 : 0;
+                newAlerts.push({
+                    type: "critical",
+                    icon: AlertCircle,
+                    text: `[${s.dealer}] ${s.name} · avg Rp ${s.avgBeban.toLocaleString(undefined, { maximumFractionDigits: 0 })}/unit — ${pctAbove.toFixed(1)}% above team avg · ${s.units} units`
+                });
+            });
         });
 
         // Add Star Performer Alert
