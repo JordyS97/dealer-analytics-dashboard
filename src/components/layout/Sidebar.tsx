@@ -25,6 +25,7 @@ const navigation = [
     { name: "Salesman Perf.", href: "/salespeople", icon: Users },
     { name: "Dealer Perf.", href: "/dealers", icon: Store },
     { name: "Finance Analytics", href: "/finance", icon: Wallet },
+    { name: "MTD Performance", href: "/mtd", icon: PieChartIcon },
     { name: "Demographics", href: "/demographics", icon: PieChartIcon },
 ];
 
@@ -59,8 +60,8 @@ export default function Sidebar() {
                                     key={item.name}
                                     href={item.href}
                                     className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors group ${isActive
-                                            ? 'bg-primary/20 text-primary border border-primary/20'
-                                            : 'text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent'
+                                        ? 'bg-primary/20 text-primary border border-primary/20'
+                                        : 'text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent'
                                         }`}
                                 >
                                     <item.icon className={`h-5 w-5 mr-3 shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'}`} />
@@ -84,8 +85,8 @@ export default function Sidebar() {
                                         key={item.name}
                                         href={item.href}
                                         className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors group ${isActive
-                                                ? 'bg-primary/20 text-primary border border-primary/20'
-                                                : 'text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent'
+                                            ? 'bg-primary/20 text-primary border border-primary/20'
+                                            : 'text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent'
                                             }`}
                                     >
                                         <item.icon className={`h-5 w-5 mr-3 shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'}`} />

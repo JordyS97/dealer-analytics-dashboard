@@ -7,6 +7,7 @@ const MAX_BATCH_SIZE = 2500;
 /**
  * Uploads an array of objects to a specific Supabase table in chunks.
  * Instead of rigid columns, we dump the entire Excel row into a single JSONB column `data`.
+ * By default, this function will DELETE existing rows in the target table to prevent duplicates.
  * 
  * @param tableName The name of the Supabase PostgreSQL table
  * @param data Array of validated objects to upload
@@ -18,6 +19,22 @@ export async function batchUploadToSupabase(
     progressCallback?: (uploaded: number, total: number) => void
 ) {
     if (!data || data.length === 0) return;
+
+    // Purge the current table directly to prevent stacking duplicates upon re-upload
+    console.log(`Clearing existing data from ${tableName}...`);
+    try {
+        const { error: deleteError } = await supabase
+            .from(tableName)
+            .delete()
+            .not("id", "is", null); // Matches all UUIDs and wipes the table
+
+        if (deleteError) {
+            console.error("Supabase clear error:", deleteError);
+            throw new Error(`Failed to clear older records: ${deleteError.message}`);
+        }
+    } catch (err: any) {
+        throw new Error(`Failed to clear older records: ${err.message}`);
+    }
 
     const total = data.length;
     let uploaded = 0;

@@ -1,6 +1,11 @@
-import { Bell, Search, Calendar, MapPin, UserCircle } from "lucide-react";
+"use client";
+
+import { Bell, Search, Calendar, MapPin } from "lucide-react";
+import { useData } from "@/lib/context/DataContext";
 
 export default function Header() {
+    const { dateFilter, setDateFilter, regionFilter, setRegionFilter, availableRegions } = useData();
+
     return (
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-6 shadow-sm z-40">
             <div className="flex items-center gap-4 flex-1">
@@ -10,22 +15,30 @@ export default function Header() {
                 <div className="ml-8 hidden lg:flex items-center gap-3">
                     <div className="flex items-center bg-muted/50 rounded-md px-3 py-1.5 border border-border">
                         <Calendar className="h-4 w-4 text-muted-foreground mr-2" />
-                        <select className="bg-transparent text-sm font-medium text-foreground outline-none border-none cursor-pointer focus:ring-0">
-                            <option>Last 30 Days</option>
-                            <option>This Month</option>
-                            <option>Last Quarter</option>
-                            <option>Year to Date</option>
-                            <option>All Time</option>
+                        <select
+                            value={dateFilter}
+                            onChange={(e) => setDateFilter(e.target.value)}
+                            className="bg-transparent text-sm font-medium text-foreground outline-none border-none cursor-pointer focus:ring-0"
+                        >
+                            <option value="Last 30 Days">Last 30 Days</option>
+                            <option value="This Month">This Month</option>
+                            <option value="Last Quarter">Last Quarter</option>
+                            <option value="Year to Date">Year to Date</option>
+                            <option value="All Time">All Time</option>
                         </select>
                     </div>
 
                     <div className="flex items-center bg-muted/50 rounded-md px-3 py-1.5 border border-border">
                         <MapPin className="h-4 w-4 text-muted-foreground mr-2" />
-                        <select className="bg-transparent text-sm font-medium text-foreground outline-none border-none cursor-pointer focus:ring-0">
-                            <option>All Branches & Regions</option>
-                            <option>Jakarta Pusat</option>
-                            <option>Surabaya Raya</option>
-                            <option>Bandung & Priangan</option>
+                        <select
+                            value={regionFilter}
+                            onChange={(e) => setRegionFilter(e.target.value)}
+                            className="bg-transparent text-sm font-medium text-foreground outline-none border-none cursor-pointer focus:ring-0 max-w-[200px] truncate"
+                        >
+                            <option value="All Branches & Regions">All Branches & Regions</option>
+                            {availableRegions.map(region => (
+                                <option key={region} value={region}>{region}</option>
+                            ))}
                         </select>
                     </div>
                 </div>
