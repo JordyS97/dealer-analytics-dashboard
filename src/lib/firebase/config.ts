@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -14,8 +14,12 @@ const firebaseConfig = {
 // Initialize Firebase only if there's no existing app instance
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Initialize Cloud Firestore and get a reference to the service
-const db = getFirestore(app);
+// Initialize Cloud Firestore and get a reference to the service. We use initializeFirestore instead of getFirestore
+// to explicitly enable long-polling auto-detection. This is strictly required for users connecting from behind 
+// restrictive corporate firewalls (very common in dealerships) that block WebSockets.
+const db = initializeFirestore(app, {
+    experimentalAutoDetectLongPolling: true,
+});
 const storage = getStorage(app);
 
 export { app, db, storage };
