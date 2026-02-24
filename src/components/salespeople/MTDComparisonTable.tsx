@@ -65,8 +65,8 @@ export default function MTDComparisonTable({ data }: MTDComparisonTableProps) {
 
             const stat = groupMap[groupKey];
             const dateVal = parseRowDate(row["Tanggal Billing"]);
-            const netSales = parseNumber(row["Net Sales"] || row["Harga OFR"]);
-            const beban = parseNumber(row["Beban Dealer"] || row["Diskon Total"]);
+            const netSales = parseNumber((row["Net Sales"] !== undefined && row["Net Sales"] !== "") ? row["Net Sales"] : row["Harga OFR"]);
+            const beban = parseNumber((row["Beban Dealer"] !== undefined && row["Beban Dealer"] !== "") ? row["Beban Dealer"] : row["Diskon Total"]);
 
             if (dateVal) {
                 // MTD Comparison

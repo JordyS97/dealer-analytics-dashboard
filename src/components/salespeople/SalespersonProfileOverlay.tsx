@@ -54,10 +54,11 @@ export default function SalespersonProfileOverlay({ isOpen, salesmanName, data, 
 
         filtered.forEach(row => {
             const dateVal = parseRowDate(row["Tanggal Billing"]);
-            const netSales = parseNumber(row["Net Sales"] || row["Harga OFR"]);
+            const netSales = parseNumber((row["Net Sales"] !== undefined && row["Net Sales"] !== "") ? row["Net Sales"] : row["Harga OFR"]);
             const dp = parseNumber(row["DP"]);
             const tenor = parseNumber(row["Tenor"]);
-            const beban = parseNumber(row["Beban Dealer"] || row["Diskon Total"]);
+            const angsuran = parseNumber(row["Angsuran"]);
+            const beban = parseNumber((row["Beban Dealer"] !== undefined && row["Beban Dealer"] !== "") ? row["Beban Dealer"] : row["Diskon Total"]);
             const motor = row["Tipe Motor"] || "Unknown";
             const fincoy = row["Nama Fincoy/Perusahaan MOP"] || row["Fincoy"] || "Cash";
 

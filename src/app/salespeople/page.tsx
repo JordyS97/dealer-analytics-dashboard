@@ -47,9 +47,23 @@ export default function SalespeoplePage() {
             return isNaN(parsed) ? 0 : parsed;
         };
 
+        const extractNetSales = (row: any) => {
+            if (row["Net Sales"] !== undefined && row["Net Sales"] !== null && row["Net Sales"] !== "") {
+                return parseNumber(row["Net Sales"]);
+            }
+            return parseNumber(row["Harga OFR"]);
+        };
+
+        const extractBeban = (row: any) => {
+            if (row["Beban Dealer"] !== undefined && row["Beban Dealer"] !== null && row["Beban Dealer"] !== "") {
+                return parseNumber(row["Beban Dealer"]);
+            }
+            return parseNumber(row["Diskon Total"]);
+        };
+
         // Standard Graph Populations
         data.forEach((row: any) => {
-            const netSales = parseNumber(row["Net Sales"] || row["Harga OFR"]);
+            const netSales = extractNetSales(row);
 
             netSalesTotal += netSales;
 
@@ -65,26 +79,25 @@ export default function SalespeoplePage() {
         });
 
         // Protected MTD Extractions natively off the unfiltered dataset
-        const { currentMtdData, lastMtdData } = getMTDDataset(rawDetailSalespeople, "Tanggal Billing");
+        const { currentMtdData, lastMtdData, referenceDate } = getMTDDataset(rawDetailSalespeople, "Tanggal Billing");
 
         const mtdCount = currentMtdData.length;
         const lastMtdCount = lastMtdData.length;
 
-        const mtdSales = currentMtdData.reduce((acc, row) => acc + parseNumber(row["Net Sales"] || row["Harga OFR"]), 0);
-        const lastMtdSales = lastMtdData.reduce((acc, row) => acc + parseNumber(row["Net Sales"] || row["Harga OFR"]), 0);
+        const mtdSales = currentMtdData.reduce((acc, row) => acc + extractNetSales(row), 0);
+        const lastMtdSales = lastMtdData.reduce((acc, row) => acc + extractNetSales(row), 0);
 
         const mtdDP = currentMtdData.reduce((acc, row) => acc + parseNumber(row["DP"]), 0);
         const lastMtdDP = lastMtdData.reduce((acc, row) => acc + parseNumber(row["DP"]), 0);
 
-        const mtdBebanTotal = currentMtdData.reduce((acc, row) => acc + parseNumber(row["Beban Dealer"] || row["Diskon Total"]), 0);
-        const lastMtdBebanTotal = lastMtdData.reduce((acc, row) => acc + parseNumber(row["Beban Dealer"] || row["Diskon Total"]), 0);
+        const mtdBebanTotal = currentMtdData.reduce((acc, row) => acc + extractBeban(row), 0);
+        const lastMtdBebanTotal = lastMtdData.reduce((acc, row) => acc + extractBeban(row), 0);
 
         const mtdBeban = mtdCount > 0 ? mtdBebanTotal / mtdCount : 0;
         const lastMtdBeban = lastMtdCount > 0 ? lastMtdBebanTotal / lastMtdCount : 0;
 
-        const today = new Date();
-        const daysElapsed = Math.max(1, getDate(today));
-        const daysInCurrentMonth = getDaysInMonth(today);
+        const daysElapsed = Math.max(1, getDate(referenceDate));
+        const daysInCurrentMonth = getDaysInMonth(referenceDate);
 
         const getPace = (val: number) => (val / daysElapsed) * daysInCurrentMonth;
         const getDelta = (mtd: number, last: number) => last > 0 ? ((mtd - last) / last) * 100 : 0;

@@ -6,10 +6,26 @@ import { startOfMonth, subMonths, getDate, getDaysInMonth, isValid } from "date-
  */
 export function getMTDDataset(rawData: any[], dateColumnName: string) {
     if (!rawData || rawData.length === 0) {
-        return { currentMtdData: [], lastMtdData: [] };
+        return { currentMtdData: [], lastMtdData: [], referenceDate: new Date() };
     }
 
-    const today = new Date();
+    const now = new Date();
+    let maxTime = 0;
+
+    rawData.forEach(row => {
+        const dateStr = row[dateColumnName];
+        if (dateStr) {
+            const txDate = new Date(dateStr);
+            if (isValid(txDate) && txDate <= now) {
+                const t = txDate.getTime();
+                if (t > maxTime) {
+                    maxTime = t;
+                }
+            }
+        }
+    });
+
+    const today = maxTime > 0 ? new Date(maxTime) : now;
     const currentMonthStart = startOfMonth(today);
 
     const lastMonthStart = startOfMonth(subMonths(today, 1));
@@ -43,7 +59,7 @@ export function getMTDDataset(rawData: any[], dateColumnName: string) {
         }
     });
 
-    return { currentMtdData, lastMtdData };
+    return { currentMtdData, lastMtdData, referenceDate: today };
 }
 
 /**

@@ -43,7 +43,7 @@ export default function SmartAlertsPanel({ data }: SmartAlertsPanelProps) {
         data.forEach(row => {
             const dateBilling = parseRowDate(row["Tanggal Billing"]);
             const dateBstk = parseRowDate(row["Tgl BSTK"] || row["Tanggal BSTK"]);
-            const beban = parseNumber(row["Beban Dealer"] || row["Diskon Total"]);
+            const beban = parseNumber((row["Beban Dealer"] !== undefined && row["Beban Dealer"] !== "") ? row["Beban Dealer"] : row["Diskon Total"]);
             const salesman = row["Nama Salesman"] || "Unknown";
             const dealer = row["Nama Dealer"] || "Unknown";
             const motor = row["Tipe Motor"] || "Unknown";

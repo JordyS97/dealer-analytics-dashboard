@@ -25,7 +25,7 @@ export default function BebanDealerHeatTable({ data }: BebanDealerHeatTableProps
 
         data.forEach((row: any) => {
             // Check for Beban Dealer or fallback to Diskon Total just in case
-            const beban = parseNumber(row["Beban Dealer"] || row["Diskon Total"]);
+            const beban = parseNumber((row["Beban Dealer"] !== undefined && row["Beban Dealer"] !== "") ? row["Beban Dealer"] : row["Diskon Total"]);
             const groupKey = row[groupField] || "Unknown";
 
             totalOverallBeban += beban;
