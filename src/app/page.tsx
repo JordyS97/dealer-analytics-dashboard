@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { Users, TrendingUp, CreditCard, Activity, Loader2 } from "lucide-react";
 import { useMemo } from "react";
+import { format } from "date-fns";
 
 const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e'];
 
@@ -61,9 +62,18 @@ export default function DashboardPage() {
 
       // Date (Tgl Mohon or Tanggal SSU)
       const rawDate = row["Tgl Mohon"] || row["Tanggal SSU"];
-      // Assuming naive grouping by raw date string for now.
       if (rawDate) {
-        dateMap[rawDate] = (dateMap[rawDate] || 0) + 1;
+        try {
+          const d = new Date(rawDate);
+          if (!isNaN(d.getTime())) {
+            const dateKey = format(d, "yyyy-MM-dd");
+            dateMap[dateKey] = (dateMap[dateKey] || 0) + 1;
+          } else {
+            dateMap[rawDate] = (dateMap[rawDate] || 0) + 1;
+          }
+        } catch {
+          dateMap[rawDate] = (dateMap[rawDate] || 0) + 1;
+        }
       }
 
       // Tipe
@@ -81,10 +91,21 @@ export default function DashboardPage() {
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
 
-    // Sort dates naive (if format is dd/mm/yyyy it might not sort perfectly alphabetically, but we will try)
+    // Grouping by yyyy-MM-dd sorts properly alphabetically, then modify label to dd-MM-yy
     const parsedDate = Object.entries(dateMap)
       .map(([date, sales]) => ({ date, sales }))
-      .sort((a, b) => a.date.localeCompare(b.date)); // Ideally parse properly
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(item => {
+        try {
+          const d = new Date(item.date);
+          if (!isNaN(d.getTime())) {
+            return { ...item, date: format(d, "dd-MM-yy") };
+          }
+          return item;
+        } catch {
+          return item;
+        }
+      });
 
     return {
       totalSales: data.length,
