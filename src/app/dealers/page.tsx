@@ -172,6 +172,7 @@ export default function DealersPage() {
                                     width={180}
                                     tickLine={false}
                                     axisLine={false}
+                                    tickFormatter={(val) => val.length > 25 ? val.substring(0, 25) + '...' : val}
                                 />
                                 <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ borderRadius: '8px' }} />
                                 <Bar dataKey="value" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={24}>
@@ -217,7 +218,7 @@ export default function DealersPage() {
                     <h3 className="text-lg font-bold text-foreground mb-6">Sales by Dealer Group</h3>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={salesByGroup} margin={{ bottom: 50 }}>
+                            <BarChart data={salesByGroup} margin={{ bottom: 80 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                                 <XAxis
                                     dataKey="name"
@@ -227,6 +228,7 @@ export default function DealersPage() {
                                     axisLine={false}
                                     angle={-45}
                                     textAnchor="end"
+                                    tickFormatter={(val) => val.length > 15 ? val.substring(0, 15) + '...' : val}
                                 />
                                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                                 <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ borderRadius: '8px' }} />

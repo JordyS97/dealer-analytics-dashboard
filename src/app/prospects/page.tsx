@@ -328,7 +328,7 @@ export default function ProspectsPage() {
                             <BarChart data={prospectsBySource} layout="vertical" margin={{ left: 50, right: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
                                 <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                                <YAxis type="category" dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} width={100} tickLine={false} axisLine={false} />
+                                <YAxis type="category" dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} width={100} tickLine={false} axisLine={false} tickFormatter={(val) => val.length > 15 ? val.substring(0, 15) + '...' : val} />
                                 <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ borderRadius: '8px' }} />
                                 <Bar dataKey="value" name="Total Prospects" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={20}>
                                     {prospectsBySource.map((entry, index) => (
@@ -347,7 +347,7 @@ export default function ProspectsPage() {
                             <BarChart data={sourceConversionRates} layout="vertical" margin={{ left: 50, right: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
                                 <XAxis type="number" domain={[0, 100]} stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                                <YAxis type="category" dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} width={100} tickLine={false} axisLine={false} />
+                                <YAxis type="category" dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} width={100} tickLine={false} axisLine={false} tickFormatter={(val) => val.length > 15 ? val.substring(0, 15) + '...' : val} />
                                 <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ borderRadius: '8px' }} formatter={(value) => [`${value}%`, 'Conversion Rate']} />
                                 <Bar dataKey="rate" name="Conversion Rate" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20}>
                                     {sourceConversionRates.map((entry, index) => (

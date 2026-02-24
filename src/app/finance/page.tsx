@@ -282,7 +282,7 @@ export default function FinancePage() {
                 <div className="md:col-span-8 rounded-xl border border-border bg-card p-6 shadow-sm flex flex-col h-[400px]">
                     <h3 className="text-base font-bold text-foreground mb-4">Discount Burden Composition (By Motor)</h3>
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData.burdenComposition} margin={{ left: 10, right: 10, bottom: 40 }}>
+                        <BarChart data={chartData.burdenComposition} margin={{ left: 10, right: 10, bottom: 80 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                             <XAxis
                                 dataKey="name"
@@ -290,8 +290,9 @@ export default function FinancePage() {
                                 fontSize={11}
                                 tickLine={false}
                                 axisLine={false}
-                                angle={-25}
+                                angle={-45}
                                 textAnchor="end"
+                                tickFormatter={(val) => val.length > 20 ? val.substring(0, 20) + '...' : val}
                             />
                             <YAxis
                                 stroke="hsl(var(--muted-foreground))"
@@ -362,16 +363,17 @@ export default function FinancePage() {
                 <div className="md:col-span-6 rounded-xl border border-border bg-card p-6 shadow-sm flex flex-col h-[350px]">
                     <h3 className="text-base font-bold text-foreground mb-4">Salesman Behavior (Avg Discount %)</h3>
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData.behaviorBySalesman} layout="vertical" margin={{ left: -10, top: 0, bottom: 0 }}>
+                        <BarChart data={chartData.behaviorBySalesman} layout="vertical" margin={{ left: 20, right: 20, top: 0, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
                             <YAxis
                                 dataKey="name"
                                 type="category"
                                 stroke="hsl(var(--muted-foreground))"
                                 fontSize={11}
-                                width={120}
+                                width={130}
                                 tickLine={false}
                                 axisLine={false}
+                                tickFormatter={(val) => val.length > 18 ? val.substring(0, 18) + '...' : val}
                             />
                             <XAxis type="number" hide />
                             <Tooltip
@@ -392,7 +394,7 @@ export default function FinancePage() {
                 <div className="md:col-span-6 rounded-xl border border-border bg-card p-6 shadow-sm flex flex-col h-[350px]">
                     <h3 className="text-base font-bold text-foreground mb-4">Finance Partner Impact</h3>
                     <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={chartData.financeImpact} margin={{ top: 10, bottom: 20 }}>
+                        <ComposedChart data={chartData.financeImpact} margin={{ top: 10, right: 10, bottom: 80 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                             <XAxis
                                 dataKey="name"
@@ -400,8 +402,9 @@ export default function FinancePage() {
                                 fontSize={11}
                                 tickLine={false}
                                 axisLine={false}
-                                angle={-25}
+                                angle={-45}
                                 textAnchor="end"
+                                tickFormatter={(val) => val.length > 20 ? val.substring(0, 20) + '...' : val}
                             />
                             <YAxis
                                 yAxisId="left"

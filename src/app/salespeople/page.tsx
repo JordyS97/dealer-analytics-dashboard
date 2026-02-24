@@ -213,6 +213,7 @@ export default function SalespeoplePage() {
                                     width={150}
                                     tickLine={false}
                                     axisLine={false}
+                                    tickFormatter={(val) => val.length > 20 ? val.substring(0, 20) + '...' : val}
                                 />
                                 <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ borderRadius: '8px' }} />
                                 <Bar

@@ -241,6 +241,7 @@ export default function DashboardPage() {
                   width={150}
                   tickLine={false}
                   axisLine={false}
+                  tickFormatter={(val) => val.length > 20 ? val.substring(0, 20) + '...' : val}
                 />
                 <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ borderRadius: '8px' }} />
                 <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={24}>
