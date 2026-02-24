@@ -1,8 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import { supabase } from "@/lib/supabase/client";
 
 // Global types for the fetched data
 type FetchState<T> = {
@@ -33,29 +32,43 @@ export function DataProvider({ children }: { children: ReactNode }) {
             setProspectAcquisition(prev => ({ ...prev, loading: true }));
 
             // Fetch Sales Overview
-            // Warning: Without indexing, orderBy might fail. We limit to 5000 for client-side processing capacity.
-            const salesQuery = query(collection(db, "sales_overview"), limit(5000));
-            const salesSnapshot = await getDocs(salesQuery);
+            const { data: salesData, error: salesError } = await supabase
+                .from("sales_overview")
+                .select("id, data")
+                .limit(5000);
+
+            if (salesError) throw salesError;
+
             setSalesOverview({
-                data: salesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                data: salesData?.map(row => ({ id: row.id, ...(row.data as any) })) || [],
                 loading: false,
                 error: null
             });
 
             // Fetch Detail Salespeople
-            const detailQuery = query(collection(db, "detail_salespeople"), limit(5000));
-            const detailSnapshot = await getDocs(detailQuery);
+            const { data: detailData, error: detailError } = await supabase
+                .from("detail_salespeople")
+                .select("id, data")
+                .limit(5000);
+
+            if (detailError) throw detailError;
+
             setDetailSalespeople({
-                data: detailSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                data: detailData?.map(row => ({ id: row.id, ...(row.data as any) })) || [],
                 loading: false,
                 error: null
             });
 
             // Fetch Prospect Acquisition
-            const prospectQuery = query(collection(db, "prospect_acquisition"), limit(5000));
-            const prospectSnapshot = await getDocs(prospectQuery);
+            const { data: prospectData, error: prospectError } = await supabase
+                .from("prospect_acquisition")
+                .select("id, data")
+                .limit(5000);
+
+            if (prospectError) throw prospectError;
+
             setProspectAcquisition({
-                data: prospectSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                data: prospectData?.map(row => ({ id: row.id, ...(row.data as any) })) || [],
                 loading: false,
                 error: null
             });

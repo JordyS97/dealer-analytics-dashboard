@@ -9,7 +9,7 @@ import {
     ProspectAcquisitionSchema
 } from "@/lib/validations/upload";
 import { z } from "zod";
-import { batchUploadToFirestore } from "@/lib/firebase/uploadHelper";
+import { batchUploadToSupabase } from "@/lib/supabase/uploadHelper";
 
 type FileType = "SALES_OVERVIEW" | "DETAIL_SALESPEOPLE" | "PROSPECT_ACQUISITION" | "UNKNOWN";
 
@@ -101,7 +101,7 @@ export default function UploadPage() {
             if (detectedType === "PROSPECT_ACQUISITION") collectionName = "prospect_acquisition";
 
             const startTime = Date.now();
-            await batchUploadToFirestore(
+            await batchUploadToSupabase(
                 collectionName,
                 summary.validData,
                 (uploaded, total) => {
@@ -121,11 +121,11 @@ export default function UploadPage() {
             alert(`🎉 Successfully uploaded ${summary.validData.length} records to the ${collectionName} database!`);
 
         } catch (error: any) {
-            console.error("Firebase upload error:", error);
+            console.error("Database upload error:", error);
 
-            // Extract the actual Firebase error message to display in the UI
-            const errorMessage = error?.message || "Unknown Firebase Error occurred.";
-            alert(`Upload Failed: ${errorMessage}\n\nIf you see 'Missing or insufficient permissions', please ensure you have applied the firestore.rules to your Firebase Console.`);
+            // Extract the actual error message to display in the UI
+            const errorMessage = error?.message || "Unknown database error occurred.";
+            alert(`Upload Failed: ${errorMessage}\n\nPlease verify your Supabase credentials in .env.local and check that the RLS policies allow insertion.`);
         } finally {
             setIsUploading(false);
         }
@@ -136,7 +136,7 @@ export default function UploadPage() {
             <div>
                 <h2 className="text-3xl font-bold text-foreground">Smart Data Upload</h2>
                 <p className="text-muted-foreground mt-2">
-                    Upload your raw exact CSV or Excel files. The system will auto-detect the file type, validate dates, and securely patch the Firebase datastore.
+                    Upload your raw exact CSV or Excel files. The system will auto-detect the file type, validate dates, and securely patch the Supabase datastore.
                 </p>
             </div>
 
