@@ -25,7 +25,6 @@ const navigation = [
     { name: "Salesman Perf.", href: "/salespeople", icon: Users },
     { name: "Dealer Perf.", href: "/dealers", icon: Store },
     { name: "Finance Analytics", href: "/finance", icon: Wallet },
-    { name: "MTD Performance", href: "/mtd", icon: PieChartIcon },
     { name: "Demographics", href: "/demographics", icon: PieChartIcon },
 ];
 

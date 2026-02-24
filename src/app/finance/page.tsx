@@ -2,6 +2,7 @@
 
 import { useData } from "@/lib/context/DataContext";
 import MetricCard from "@/components/ui/MetricCard";
+import { getMTDDataset, calculateMTDTrend } from "@/lib/utils/mtdUtils";
 import {
     BarChart, Bar,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -12,8 +13,27 @@ import { useMemo } from "react";
 import { format, parseISO } from "date-fns";
 
 export default function FinancePage() {
-    const { detailSalespeople } = useData();
+    const { detailSalespeople, rawDetailSalespeople } = useData();
     const { data: rawData, loading } = detailSalespeople;
+
+    const { mtdOfrTrend, mtdDiscTrend } = useMemo(() => {
+        const { currentMtdData, lastMtdData } = getMTDDataset(rawDetailSalespeople, "Tanggal Billing");
+
+        const parseMoney = (val: any) => {
+            const parsed = typeof val === 'string' ? parseFloat(val.replace(/,/g, '')) : parseFloat(val);
+            return isNaN(parsed) ? 0 : parsed;
+        };
+
+        const ofrCur = currentMtdData.reduce((acc, row) => acc + parseMoney(row["Harga OFR"]), 0);
+        const ofrLast = lastMtdData.reduce((acc, row) => acc + parseMoney(row["Harga OFR"]), 0);
+        const ofrTrend = calculateMTDTrend(ofrCur, ofrLast);
+
+        const discCur = currentMtdData.reduce((acc, row) => acc + parseMoney(row["Diskon Total"]), 0);
+        const discLast = lastMtdData.reduce((acc, row) => acc + parseMoney(row["Diskon Total"]), 0);
+        const discTrend = calculateMTDTrend(discCur, discLast);
+
+        return { mtdOfrTrend: ofrTrend, mtdDiscTrend: discTrend };
+    }, [rawDetailSalespeople]);
 
     const {
         metrics,
@@ -227,8 +247,8 @@ export default function FinancePage() {
             <div className="space-y-3">
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Revenue Reality</h2>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <MetricCard title="Gross Revenue (OFR)" value={formatRp(m.grossRevenue)} icon={Receipt} iconColor="text-blue-500" />
-                    <MetricCard title="Total Discount Given" value={formatRp(m.totalDiscount)} icon={TrendingDown} iconColor="text-amber-500" />
+                    <MetricCard title="Gross Revenue (OFR)" value={formatRp(m.grossRevenue)} icon={Receipt} iconColor="text-blue-500" trend={parseFloat(mtdOfrTrend.toFixed(1))} subtitle="MTD Pace YoY" />
+                    <MetricCard title="Total Discount Given" value={formatRp(m.totalDiscount)} icon={TrendingDown} iconColor="text-amber-500" trend={parseFloat(mtdDiscTrend.toFixed(1))} subtitle="MTD Pace YoY" />
                     <MetricCard title="Average Discount %" value={`${m.avgDiscountPct.toFixed(2)}%`} icon={Percent} iconColor="text-rose-500" />
                     <MetricCard title="Net Sales (Clean)" value={formatRp(m.netSales)} icon={Banknote} iconColor="text-emerald-500" />
                 </div>

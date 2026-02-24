@@ -2,6 +2,7 @@
 
 import { useData } from "@/lib/context/DataContext";
 import MetricCard from "@/components/ui/MetricCard";
+import { getMTDDataset } from "@/lib/utils/mtdUtils";
 import {
     BarChart, Bar,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -20,7 +21,7 @@ import SalespersonProfileOverlay from "@/components/salespeople/SalespersonProfi
 const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function SalespeoplePage() {
-    const { detailSalespeople } = useData();
+    const { detailSalespeople, rawDetailSalespeople } = useData();
     const { data, loading } = detailSalespeople;
     const [selectedSalesman, setSelectedSalesman] = useState<string | null>(null);
 
@@ -39,27 +40,6 @@ export default function SalespeoplePage() {
         const methodMap: Record<string, number> = {};
         const salespersonMap: Record<string, { count: number; name: string; revenue: number }> = {};
 
-        // MTD variables
-        const today = new Date();
-        const currentMonthStart = startOfMonth(today);
-        const lastMonthToday = subMonths(today, 1);
-        const lastMonthStart = startOfMonth(lastMonthToday);
-
-        const daysElapsed = Math.max(1, getDate(today));
-        const daysInCurrentMonth = getDaysInMonth(today);
-
-        let mtdCount = 0, lastMtdCount = 0;
-        let mtdSales = 0, lastMtdSales = 0;
-        let mtdDP = 0, lastMtdDP = 0;
-        let mtdBebanTotal = 0, lastMtdBebanTotal = 0;
-
-        const parseRowDate = (val: any) => {
-            if (!val) return null;
-            if (val.toDate) return val.toDate();
-            if (val instanceof Date) return val;
-            return new Date(val);
-        };
-
         const parseNumber = (val: any) => {
             if (!val) return 0;
             if (typeof val === "number") return isNaN(val) ? 0 : val;
@@ -67,46 +47,44 @@ export default function SalespeoplePage() {
             return isNaN(parsed) ? 0 : parsed;
         };
 
+        // Standard Graph Populations
         data.forEach((row: any) => {
-            // Numbers
             const netSales = parseNumber(row["Net Sales"] || row["Harga OFR"]);
-            const dp = parseNumber(row["DP"]);
-            // Adjust to map "Beban Dealer"
-            const beban = parseNumber(row["Beban Dealer"] || row["Diskon Total"]);
 
             netSalesTotal += netSales;
 
-            // Method
             const method = row["Metode Pembelian"] || "Unknown";
             methodMap[method] = (methodMap[method] || 0) + 1;
 
-            // Salesperson
             const spName = row["Nama Salesman"] || "Unknown";
             if (!salespersonMap[spName]) {
                 salespersonMap[spName] = { count: 0, name: spName, revenue: 0 };
             }
             salespersonMap[spName].count += 1;
             salespersonMap[spName].revenue += netSales;
-
-            // MTD Calculation
-            const dateVal = parseRowDate(row["Tanggal Billing"]);
-            if (dateVal) {
-                if (dateVal >= currentMonthStart && dateVal <= today) {
-                    mtdCount++;
-                    mtdSales += netSales;
-                    mtdDP += dp;
-                    mtdBebanTotal += beban;
-                } else if (dateVal >= lastMonthStart && dateVal <= lastMonthToday) {
-                    lastMtdCount++;
-                    lastMtdSales += netSales;
-                    lastMtdDP += dp;
-                    lastMtdBebanTotal += beban;
-                }
-            }
         });
+
+        // Protected MTD Extractions natively off the unfiltered dataset
+        const { currentMtdData, lastMtdData } = getMTDDataset(rawDetailSalespeople, "Tanggal Billing");
+
+        const mtdCount = currentMtdData.length;
+        const lastMtdCount = lastMtdData.length;
+
+        const mtdSales = currentMtdData.reduce((acc, row) => acc + parseNumber(row["Net Sales"] || row["Harga OFR"]), 0);
+        const lastMtdSales = lastMtdData.reduce((acc, row) => acc + parseNumber(row["Net Sales"] || row["Harga OFR"]), 0);
+
+        const mtdDP = currentMtdData.reduce((acc, row) => acc + parseNumber(row["DP"]), 0);
+        const lastMtdDP = lastMtdData.reduce((acc, row) => acc + parseNumber(row["DP"]), 0);
+
+        const mtdBebanTotal = currentMtdData.reduce((acc, row) => acc + parseNumber(row["Beban Dealer"] || row["Diskon Total"]), 0);
+        const lastMtdBebanTotal = lastMtdData.reduce((acc, row) => acc + parseNumber(row["Beban Dealer"] || row["Diskon Total"]), 0);
 
         const mtdBeban = mtdCount > 0 ? mtdBebanTotal / mtdCount : 0;
         const lastMtdBeban = lastMtdCount > 0 ? lastMtdBebanTotal / lastMtdCount : 0;
+
+        const today = new Date();
+        const daysElapsed = Math.max(1, getDate(today));
+        const daysInCurrentMonth = getDaysInMonth(today);
 
         const getPace = (val: number) => (val / daysElapsed) * daysInCurrentMonth;
         const getDelta = (mtd: number, last: number) => last > 0 ? ((mtd - last) / last) * 100 : 0;
@@ -131,7 +109,7 @@ export default function SalespeoplePage() {
                 beban: { current: mtdBeban, last: lastMtdBeban, pace: getPace(mtdBeban), delta: getDelta(mtdBeban, lastMtdBeban) }
             }
         };
-    }, [data]);
+    }, [data, rawDetailSalespeople]);
 
     if (loading) {
         return (

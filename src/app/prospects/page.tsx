@@ -2,6 +2,7 @@
 
 import { useData } from "@/lib/context/DataContext";
 import MetricCard from "@/components/ui/MetricCard";
+import { getMTDDataset, calculateMTDTrend } from "@/lib/utils/mtdUtils";
 import {
     BarChart, Bar,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -15,9 +16,21 @@ import { differenceInDays, format, parseISO } from "date-fns";
 const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#6366f1', '#84cc16'];
 
 export default function ProspectsPage() {
-    const { prospectAcquisition, detailSalespeople } = useData();
+    const { prospectAcquisition, detailSalespeople, rawProspectAcquisition } = useData();
     const { data: prospectData, loading: prospectLoading } = prospectAcquisition;
     const { data: salesData, loading: salesLoading } = detailSalespeople;
+
+    const { mtdProspectsTrend, mtdConversionsTrend } = useMemo(() => {
+        const { currentMtdData, lastMtdData } = getMTDDataset(rawProspectAcquisition, "RegistrationDate");
+
+        const prospectsTrend = calculateMTDTrend(currentMtdData.length, lastMtdData.length);
+
+        const convCur = currentMtdData.filter(r => (r["Prospect Status"] || "").toUpperCase().includes("DEAL") || (r["Prospect Status"] || "").toUpperCase().includes("SPK")).length;
+        const convLast = lastMtdData.filter(r => (r["Prospect Status"] || "").toUpperCase().includes("DEAL") || (r["Prospect Status"] || "").toUpperCase().includes("SPK")).length;
+        const convTrend = calculateMTDTrend(convCur, convLast);
+
+        return { mtdProspectsTrend: prospectsTrend, mtdConversionsTrend: convTrend };
+    }, [rawProspectAcquisition]);
 
     const {
         totalProspects,
@@ -232,12 +245,15 @@ export default function ProspectsPage() {
                     title="Total Prospects"
                     value={totalProspects.toLocaleString()}
                     icon={Users}
-                    trend={8.2}
+                    trend={parseFloat(mtdProspectsTrend.toFixed(1))}
+                    subtitle="MTD Pace YoY"
                 />
                 <MetricCard
                     title="Est. Conversions"
                     value={convertedProspects.toLocaleString()}
                     icon={Target}
+                    trend={parseFloat(mtdConversionsTrend.toFixed(1))}
+                    subtitle="MTD Pace YoY"
                 />
                 <MetricCard
                     title="Conversion Rate"

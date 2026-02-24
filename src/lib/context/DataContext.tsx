@@ -15,6 +15,9 @@ interface DataContextType {
     salesOverview: FetchState<any>;
     detailSalespeople: FetchState<any>;
     prospectAcquisition: FetchState<any>;
+    rawSalesOverview: any[];
+    rawDetailSalespeople: any[];
+    rawProspectAcquisition: any[];
     dateFilter: string;
     setDateFilter: (val: string) => void;
     regionFilter: string;
@@ -137,6 +140,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
             salesOverview: { data: filteredSales, loading, error: null },
             detailSalespeople: { data: filteredDetail, loading, error: null },
             prospectAcquisition: { data: filteredProspect, loading, error: null },
+            rawSalesOverview: rawSales,
+            rawDetailSalespeople: rawDetail,
+            rawProspectAcquisition: rawProspect,
             dateFilter,
             setDateFilter,
             regionFilter,

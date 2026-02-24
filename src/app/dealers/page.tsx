@@ -2,6 +2,7 @@
 
 import { useData } from "@/lib/context/DataContext";
 import MetricCard from "@/components/ui/MetricCard";
+import { getMTDDataset, calculateMTDTrend } from "@/lib/utils/mtdUtils";
 import {
     BarChart, Bar,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -14,8 +15,29 @@ const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 
 export default function DealersPage() {
     // We use Sales Overview for Dealer Performance
-    const { salesOverview } = useData();
+    const { salesOverview, rawSalesOverview } = useData();
     const { data, loading } = salesOverview;
+
+    const { mtdDealerTrend, mtdAreaTrend, mtdGroupTrend } = useMemo(() => {
+        const { currentMtdData, lastMtdData } = getMTDDataset(rawSalesOverview, "Tgl Mohon");
+
+        const getUniqueCount = (arr: any[], key: string) => new Set(arr.map(r => r[key]).filter(Boolean)).size;
+
+        const mtdActiveDealers = getUniqueCount(currentMtdData, "Dealer/SO");
+        const lastMtdActiveDealers = getUniqueCount(lastMtdData, "Dealer/SO");
+
+        const mtdAreas = getUniqueCount(currentMtdData, "Area Dealer");
+        const lastMtdAreas = getUniqueCount(lastMtdData, "Area Dealer");
+
+        const mtdGroups = getUniqueCount(currentMtdData, "Grup Dealer");
+        const lastMtdGroups = getUniqueCount(lastMtdData, "Grup Dealer");
+
+        return {
+            mtdDealerTrend: calculateMTDTrend(mtdActiveDealers, lastMtdActiveDealers),
+            mtdAreaTrend: calculateMTDTrend(mtdAreas, lastMtdAreas),
+            mtdGroupTrend: calculateMTDTrend(mtdGroups, lastMtdGroups)
+        };
+    }, [rawSalesOverview]);
 
     const {
         totalDealers,
@@ -108,7 +130,8 @@ export default function DealersPage() {
                     title="Active Dealerships"
                     value={totalDealers}
                     icon={Store}
-                    trend={2.1}
+                    trend={parseFloat(mtdDealerTrend.toFixed(1))}
+                    subtitle="MTD Pace YoY"
                 />
                 <MetricCard
                     title="Top Dealership"
@@ -119,11 +142,15 @@ export default function DealersPage() {
                     title="Active Areas"
                     value={salesByArea.length}
                     icon={MapPin}
+                    trend={parseFloat(mtdAreaTrend.toFixed(1))}
+                    subtitle="MTD Pace YoY"
                 />
                 <MetricCard
                     title="Dealer Groups"
                     value={salesByGroup.length}
                     icon={Building}
+                    trend={parseFloat(mtdGroupTrend.toFixed(1))}
+                    subtitle="MTD Pace YoY"
                 />
             </div>
 

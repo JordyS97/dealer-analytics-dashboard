@@ -2,6 +2,7 @@
 
 import { useData } from "@/lib/context/DataContext";
 import MetricCard from "@/components/ui/MetricCard";
+import { getMTDDataset, calculateMTDTrend } from "@/lib/utils/mtdUtils";
 import SmartInsights from "@/components/ui/SmartInsights";
 import {
   BarChart, Bar,
@@ -15,9 +16,22 @@ import { useMemo } from "react";
 const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e'];
 
 export default function DashboardPage() {
-  const { salesOverview } = useData();
+  const { salesOverview, rawSalesOverview } = useData();
 
   const { data, loading } = salesOverview;
+
+  // Calculate MTD Pacing independently of the current UI Date Filter
+  const { mtdSalesTrend, mtdDpTrend } = useMemo(() => {
+    const { currentMtdData, lastMtdData } = getMTDDataset(rawSalesOverview, "Tgl Mohon");
+
+    const salesTrend = calculateMTDTrend(currentMtdData.length, lastMtdData.length);
+
+    const dpCurrent = currentMtdData.reduce((acc, row) => acc + (parseFloat(row["DP Aktual"]) || 0), 0);
+    const dpLast = lastMtdData.reduce((acc, row) => acc + (parseFloat(row["DP Aktual"]) || 0), 0);
+    const dpTrend = calculateMTDTrend(dpCurrent, dpLast);
+
+    return { mtdSalesTrend: salesTrend, mtdDpTrend: dpTrend };
+  }, [rawSalesOverview]);
 
   // Compute Metrics and Chart Data
   const {
@@ -121,12 +135,14 @@ export default function DashboardPage() {
           title="Total Units Sold"
           value={totalSales.toLocaleString()}
           icon={TrendingUp}
-          trend={12.5}
+          trend={parseFloat(mtdSalesTrend.toFixed(1))}
+          subtitle="MTD Pace YoY"
         />
         <MetricCard
           title="Total Down Payment (DP)"
           value={`Rp ${(totalDP / 1000000).toFixed(1)}M`}
-          subtitle="Collected"
+          trend={parseFloat(mtdDpTrend.toFixed(1))}
+          subtitle="MTD Pace YoY"
           icon={CreditCard}
         />
         <MetricCard

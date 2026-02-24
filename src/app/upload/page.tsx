@@ -134,7 +134,13 @@ export default function UploadPage() {
     return (
         <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500 pt-8">
             <div>
-                <h2 className="text-3xl font-bold text-foreground">Smart Data Upload</h2>
+                <h2 className="text-3xl font-bold text-foreground flex items-center justify-between">
+                    Smart Data Upload
+                    <a href="/Astra_Analytics_Data_Template.xlsx" download className="inline-flex items-center px-4 py-2 bg-primary/10 text-primary border border-primary/20 rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors">
+                        <FileSpreadsheet className="h-4 w-4 mr-2" />
+                        Download Data Template
+                    </a>
+                </h2>
                 <p className="text-muted-foreground mt-2">
                     Upload your raw exact CSV or Excel files. The system will auto-detect the file type, validate dates, and securely patch the Supabase datastore.
                 </p>
