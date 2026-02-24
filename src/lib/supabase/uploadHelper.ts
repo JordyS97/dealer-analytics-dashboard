@@ -68,7 +68,18 @@ export async function batchUploadToSupabase(
     } else {
         // Fallback: If no date column is found, we don't wipe to avoid destroying the whole database, 
         // but this may cause duplicates if they upload the identical file twice.
-        console.warn("No timestamp column found for duplicate prevention. Skipping purge.");
+        // HOWEVER, if it's the master_dealer table, we DO want to wipe it completely because it's a dimensional master table.
+        if (tableName === "master_dealer") {
+            console.log(`Clearing ALL existing data from ${tableName} (Master Data Replacement)...`);
+            try {
+                const { error: deleteError } = await supabase.from(tableName).delete().not("id", "is", null);
+                if (deleteError) throw new Error(`Failed to clear master table: ${deleteError.message}`);
+            } catch (err: any) {
+                throw new Error(`Failed to clear master records: ${err.message}`);
+            }
+        } else {
+            console.warn("No timestamp column found for duplicate prevention. Skipping purge.");
+        }
     }
 
     const total = data.length;

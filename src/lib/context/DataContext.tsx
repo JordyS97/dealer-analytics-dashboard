@@ -20,9 +20,12 @@ interface DataContextType {
     rawProspectAcquisition: any[];
     dateFilter: string;
     setDateFilter: (val: string) => void;
-    regionFilter: string;
-    setRegionFilter: (val: string) => void;
-    availableRegions: string[];
+    groupFilter: string;
+    setGroupFilter: (val: string) => void;
+    daerahFilter: string;
+    setDaerahFilter: (val: string) => void;
+    availableGroups: string[];
+    availableDaerahs: string[];
     refreshData: () => Promise<void>;
 }
 
@@ -33,12 +36,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const [rawSales, setRawSales] = useState<any[]>([]);
     const [rawDetail, setRawDetail] = useState<any[]>([]);
     const [rawProspect, setRawProspect] = useState<any[]>([]);
+    const [rawMaster, setRawMaster] = useState<any[]>([]);
 
     const [loading, setLoading] = useState(true);
 
     // Global Filters
     const [dateFilter, setDateFilter] = useState("All Time");
-    const [regionFilter, setRegionFilter] = useState("All Branches & Regions");
+    const [groupFilter, setGroupFilter] = useState("All Groups");
+    const [daerahFilter, setDaerahFilter] = useState("All Regions");
 
     const fetchAllRows = async (tableName: string) => {
         let allData: any[] = [];
@@ -81,9 +86,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const prospectData = await fetchAllRows("prospect_acquisition");
             const parsedProspect = prospectData.map(row => ({ id: row.id, ...(row.data as any) }));
 
+            // Fetch Master Data
+            const masterData = await fetchAllRows("master_dealer");
+            const parsedMaster = masterData.map(row => ({ id: row.id, ...(row.data as any) }));
+
             setRawSales(parsedSales);
             setRawDetail(parsedDetail);
             setRawProspect(parsedProspect);
+            setRawMaster(parsedMaster);
 
         } catch (err: any) {
             console.error("Error fetching global context data:", err);
@@ -97,7 +107,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }, []);
 
     // Filter Logic
-    const { filteredSales, filteredDetail, filteredProspect, availableRegions } = useMemo(() => {
+    const { filteredSales, filteredDetail, filteredProspect, availableGroups, availableDaerahs } = useMemo(() => {
         const today = new Date();
         let startDate: Date | null = null;
         let endDate: Date | null = today;
@@ -125,40 +135,74 @@ export function DataProvider({ children }: { children: ReactNode }) {
             return isWithinInterval(d, { start: startDate, end: endDate });
         };
 
-        const regionCheck = (rowRegion: string | null | undefined) => {
-            if (regionFilter === "All Branches & Regions") return true;
-            if (!rowRegion) return true; // Detail Sales doesn't usually have region, keep it visible
-            return String(rowRegion).trim().toLowerCase() === regionFilter.toLowerCase();
+        // Create Master Mapping
+        const dealerMap: Record<string, { group: string, daerah: string }> = {};
+        const groupsSet = new Set<string>();
+        const daerahsSet = new Set<string>();
+
+        rawMaster.forEach(row => {
+            const group = String(row["Group Dealer"] || "").trim();
+            const daerah = String(row["Daerah Dealer"] || "").trim();
+
+            if (group) groupsSet.add(group);
+            if (daerah) daerahsSet.add(daerah);
+
+            const mapping = { group, daerah };
+
+            if (row["Dealer"]) dealerMap[String(row["Dealer"]).toUpperCase()] = mapping;
+            if (row["Kode"]) dealerMap[String(row["Kode"]).toUpperCase()] = mapping;
+            if (row["Customer Code"]) dealerMap[String(row["Customer Code"]).toUpperCase()] = mapping;
+            if (row["STAR Code"]) dealerMap[String(row["STAR Code"]).toUpperCase()] = mapping;
+        });
+
+        const getMasterData = (row: any) => {
+            const name = String(row["Dealer/SO"] || row["Nama Dealer"] || row["Area Dealer"] || "").toUpperCase().trim();
+            const kode = String(row["Kode Dealer"] || "").toUpperCase().trim();
+            return dealerMap[name] || dealerMap[kode] || { group: "", daerah: "" };
         };
 
-        // Extracting Dynamic Regions from the Database (Sales Overview has 'Area Dealer', Prospects has 'Region')
-        const regionsSet = new Set<string>();
+        const masterCheck = (row: any) => {
+            const master = getMasterData(row);
+
+            let passGroup = true;
+            if (groupFilter !== "All Groups") {
+                passGroup = master.group.toLowerCase() === groupFilter.toLowerCase();
+            }
+
+            let passDaerah = true;
+            if (daerahFilter !== "All Regions") {
+                // Notice the raw file prospect sometimes has "Region" which wasn't strictly checked inside master. Make sure we fallback cleanly.
+                passDaerah = master.daerah.toLowerCase() === daerahFilter.toLowerCase();
+
+                // Extra fallback: if Prospect sheet holds "Region" natively instead of mapping out
+                if (!passDaerah && row["Region"]) {
+                    passDaerah = String(row["Region"]).toLowerCase().trim() === daerahFilter.toLowerCase();
+                }
+            }
+
+            return passGroup && passDaerah;
+        };
 
         const fSales = rawSales.filter(row => {
-            const rowRegion = row["Area Dealer"] || row["Region"];
-            if (rowRegion) regionsSet.add(rowRegion);
-            return isDateInRange(row["Tanggal SSU"] || row["Tgl Mohon"]) && regionCheck(rowRegion);
+            return isDateInRange(row["Tanggal SSU"] || row["Tgl Mohon"]) && masterCheck(row);
         });
 
         const fDetail = rawDetail.filter(row => {
-            // detail_salespeople typically doesn't have an explicit Region, mostly Kode Dealer/Nama Dealer
-            // We'll filter only by Date here to prevent wiping out data
-            return isDateInRange(row["Tanggal SPK"] || row["Tanggal Billing"] || row["Tanggal Prospect"]);
+            return isDateInRange(row["Tanggal SPK"] || row["Tanggal Billing"] || row["Tanggal Prospect"]) && masterCheck(row);
         });
 
         const fProspect = rawProspect.filter(row => {
-            const rowRegion = row["Region"];
-            if (rowRegion) regionsSet.add(rowRegion);
-            return isDateInRange(row["RegistrationDate"] || row["FollowUpDate"]) && regionCheck(rowRegion);
+            return isDateInRange(row["RegistrationDate"] || row["FollowUpDate"]) && masterCheck(row);
         });
 
         return {
             filteredSales: fSales,
             filteredDetail: fDetail,
             filteredProspect: fProspect,
-            availableRegions: Array.from(regionsSet).sort()
+            availableGroups: Array.from(groupsSet).sort(),
+            availableDaerahs: Array.from(daerahsSet).sort()
         };
-    }, [rawSales, rawDetail, rawProspect, dateFilter, regionFilter]);
+    }, [rawSales, rawDetail, rawProspect, rawMaster, dateFilter, groupFilter, daerahFilter]);
 
     return (
         <DataContext.Provider value={{
@@ -170,9 +214,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
             rawProspectAcquisition: rawProspect,
             dateFilter,
             setDateFilter,
-            regionFilter,
-            setRegionFilter,
-            availableRegions,
+            groupFilter,
+            setGroupFilter,
+            daerahFilter,
+            setDaerahFilter,
+            availableGroups,
+            availableDaerahs,
             refreshData: fetchData
         }}>
             {children}

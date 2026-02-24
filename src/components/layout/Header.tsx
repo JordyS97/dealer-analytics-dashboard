@@ -4,7 +4,11 @@ import { Bell, Search, Calendar, MapPin } from "lucide-react";
 import { useData } from "@/lib/context/DataContext";
 
 export default function Header() {
-    const { dateFilter, setDateFilter, regionFilter, setRegionFilter, availableRegions } = useData();
+    const {
+        dateFilter, setDateFilter,
+        groupFilter, setGroupFilter, availableGroups,
+        daerahFilter, setDaerahFilter, availableDaerahs
+    } = useData();
 
     return (
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-6 shadow-sm z-40">
@@ -31,12 +35,26 @@ export default function Header() {
                     <div className="flex items-center bg-muted/50 rounded-md px-3 py-1.5 border border-border">
                         <MapPin className="h-4 w-4 text-muted-foreground mr-2" />
                         <select
-                            value={regionFilter}
-                            onChange={(e) => setRegionFilter(e.target.value)}
-                            className="bg-transparent text-sm font-medium text-foreground outline-none border-none cursor-pointer focus:ring-0 max-w-[200px] truncate"
+                            value={groupFilter}
+                            onChange={(e) => setGroupFilter(e.target.value)}
+                            className="bg-transparent text-sm font-medium text-foreground outline-none border-none cursor-pointer focus:ring-0 max-w-[150px] truncate"
                         >
-                            <option value="All Branches & Regions">All Branches & Regions</option>
-                            {availableRegions.map(region => (
+                            <option value="All Groups">All Groups</option>
+                            {availableGroups.map(group => (
+                                <option key={group} value={group}>{group}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex items-center bg-muted/50 rounded-md px-3 py-1.5 border border-border">
+                        <MapPin className="h-4 w-4 text-muted-foreground mr-2" />
+                        <select
+                            value={daerahFilter}
+                            onChange={(e) => setDaerahFilter(e.target.value)}
+                            className="bg-transparent text-sm font-medium text-foreground outline-none border-none cursor-pointer focus:ring-0 max-w-[150px] truncate"
+                        >
+                            <option value="All Regions">All Regions</option>
+                            {availableDaerahs.map(region => (
                                 <option key={region} value={region}>{region}</option>
                             ))}
                         </select>

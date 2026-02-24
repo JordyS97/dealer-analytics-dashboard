@@ -121,7 +121,19 @@ export const ProspectAcquisitionSchema = z.object({
     "FollowUp Status": z.string().optional(),
 }).passthrough();
 
+// 4️⃣ File 4: Master Dealer Schema
+export const MasterDealerSchema = z.object({
+    "Customer Code": z.union([z.string(), z.number()]).optional(),
+    "Kode": z.union([z.string(), z.number()]).optional(),
+    "STAR Code": z.union([z.string(), z.number()]).optional(),
+    "Dealer": z.string().optional(),
+    "Group Dealer": z.string().optional(),
+    "Kategori Dealer": z.string().optional(),
+    "Daerah Dealer": z.string().optional(),
+}).passthrough();
+
 // Type inference
 export type SalesOverview = z.infer<typeof SalesOverviewSchema>;
 export type DetailSalespeople = z.infer<typeof DetailSalespeopleSchema>;
 export type ProspectAcquisition = z.infer<typeof ProspectAcquisitionSchema>;
+export type MasterDealer = z.infer<typeof MasterDealerSchema>;

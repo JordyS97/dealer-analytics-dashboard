@@ -6,12 +6,13 @@ import * as xlsx from "xlsx";
 import {
     SalesOverviewSchema,
     DetailSalespeopleSchema,
-    ProspectAcquisitionSchema
+    ProspectAcquisitionSchema,
+    MasterDealerSchema
 } from "@/lib/validations/upload";
 import { z } from "zod";
 import { batchUploadToSupabase } from "@/lib/supabase/uploadHelper";
 
-type FileType = "SALES_OVERVIEW" | "DETAIL_SALESPEOPLE" | "PROSPECT_ACQUISITION" | "UNKNOWN";
+type FileType = "SALES_OVERVIEW" | "DETAIL_SALESPEOPLE" | "PROSPECT_ACQUISITION" | "MASTER_DEALER" | "UNKNOWN";
 
 export default function UploadPage() {
     const [isDragging, setIsDragging] = useState(false);
@@ -28,6 +29,7 @@ export default function UploadPage() {
         if (H.includes("no mesin") && H.includes("tgl mohon") && H.includes("dp aktual")) return "SALES_OVERVIEW";
         if (H.includes("no prospect") && H.includes("nama salesman") && H.includes("harga ofr")) return "DETAIL_SALESPEOPLE";
         if (H.includes("prospectnumber") && H.includes("source prospect") && H.includes("followupdate")) return "PROSPECT_ACQUISITION";
+        if (H.includes("customer code") && H.includes("dealer") && H.includes("kategori dealer")) return "MASTER_DEALER";
         return "UNKNOWN";
     };
 
@@ -57,6 +59,7 @@ export default function UploadPage() {
             let schema: z.ZodTypeAny;
             if (type === "SALES_OVERVIEW") schema = SalesOverviewSchema;
             else if (type === "DETAIL_SALESPEOPLE") schema = DetailSalespeopleSchema;
+            else if (type === "MASTER_DEALER") schema = MasterDealerSchema;
             else schema = ProspectAcquisitionSchema;
 
             let validCount = 0;
@@ -99,6 +102,7 @@ export default function UploadPage() {
             if (detectedType === "SALES_OVERVIEW") collectionName = "sales_overview";
             if (detectedType === "DETAIL_SALESPEOPLE") collectionName = "detail_salespeople";
             if (detectedType === "PROSPECT_ACQUISITION") collectionName = "prospect_acquisition";
+            if (detectedType === "MASTER_DEALER") collectionName = "master_dealer";
 
             const startTime = Date.now();
             await batchUploadToSupabase(
@@ -146,11 +150,12 @@ export default function UploadPage() {
                 </p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-4">
                 {[
                     { name: "File 1: Sales Overview", id: "SALES_OVERVIEW" },
                     { name: "File 2: Detail Salespeople", id: "DETAIL_SALESPEOPLE" },
-                    { name: "File 3: Prospect Acquisition", id: "PROSPECT_ACQUISITION" }
+                    { name: "File 3: Prospect Acquisition", id: "PROSPECT_ACQUISITION" },
+                    { name: "File 4: Master Data", id: "MASTER_DEALER" }
                 ].map((type) => (
                     <div key={type.id} className={`relative rounded-xl bg-card border border-border p-6 flex flex-col items-center justify-center text-center transition-all ${detectedType === type.id ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : ''}`}>
                         <div className={`h-12 w-12 rounded-full flex items-center justify-center mb-4 transition-all ${detectedType === type.id ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
