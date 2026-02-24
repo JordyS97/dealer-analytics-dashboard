@@ -40,21 +40,46 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const [dateFilter, setDateFilter] = useState("All Time");
     const [regionFilter, setRegionFilter] = useState("All Branches & Regions");
 
+    const fetchAllRows = async (tableName: string) => {
+        let allData: any[] = [];
+        let from = 0;
+        const step = 1000;
+        let hasMore = true;
+
+        while (hasMore) {
+            const { data, error } = await supabase.from(tableName).select("id, data").range(from, from + step - 1);
+            if (error) {
+                console.error(`Error fetching ${tableName}:`, error);
+                break;
+            }
+            if (data && data.length > 0) {
+                allData = [...allData, ...data];
+                from += step;
+                if (data.length < step) {
+                    hasMore = false;
+                }
+            } else {
+                hasMore = false;
+            }
+        }
+        return allData;
+    };
+
     const fetchData = async () => {
         try {
             setLoading(true);
 
             // Fetch Sales Overview
-            const { data: salesData } = await supabase.from("sales_overview").select("id, data").limit(10000);
-            const parsedSales = salesData?.map(row => ({ id: row.id, ...(row.data as any) })) || [];
+            const salesData = await fetchAllRows("sales_overview");
+            const parsedSales = salesData.map(row => ({ id: row.id, ...(row.data as any) }));
 
             // Fetch Detail Salespeople
-            const { data: detailData } = await supabase.from("detail_salespeople").select("id, data").limit(10000);
-            const parsedDetail = detailData?.map(row => ({ id: row.id, ...(row.data as any) })) || [];
+            const detailData = await fetchAllRows("detail_salespeople");
+            const parsedDetail = detailData.map(row => ({ id: row.id, ...(row.data as any) }));
 
             // Fetch Prospect Acquisition
-            const { data: prospectData } = await supabase.from("prospect_acquisition").select("id, data").limit(10000);
-            const parsedProspect = prospectData?.map(row => ({ id: row.id, ...(row.data as any) })) || [];
+            const prospectData = await fetchAllRows("prospect_acquisition");
+            const parsedProspect = prospectData.map(row => ({ id: row.id, ...(row.data as any) }));
 
             setRawSales(parsedSales);
             setRawDetail(parsedDetail);
