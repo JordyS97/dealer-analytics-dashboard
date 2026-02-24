@@ -43,10 +43,15 @@ export async function batchUploadToFirestore(
 
         console.log(`Sending batch ${i} to ${i + chunk.length}...`);
         try {
-            await batch.commit();
+            // Firebase SDK hangs infinitely instead of throwing an error if the connection drops or is blocked.
+            // We use Promise.race to enforce a 15 second timeout.
+            await Promise.race([
+                batch.commit(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("Firebase network connection timed out after 15 seconds. Please check your internet connection or Firebase permissions.")), 15000))
+            ]);
         } catch (error: any) {
             console.error(`Batch commit failed at row ${i}:`, error);
-            throw new Error(`Upload aborted at row ${i} due to Firebase error: ${error.message}`);
+            throw new Error(`Upload aborted at row ${i} due to network/firebase error: ${error.message}`);
         }
 
         uploaded += chunk.length;
