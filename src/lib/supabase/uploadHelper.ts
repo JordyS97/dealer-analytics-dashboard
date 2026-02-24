@@ -20,20 +20,55 @@ export async function batchUploadToSupabase(
 ) {
     if (!data || data.length === 0) return;
 
-    // Purge the current table directly to prevent stacking duplicates upon re-upload
-    console.log(`Clearing existing data from ${tableName}...`);
-    try {
-        const { error: deleteError } = await supabase
-            .from(tableName)
-            .delete()
-            .not("id", "is", null); // Matches all UUIDs and wipes the table
+    // To prevent stacking duplicates upon re-upload, we selectively purge ONLY the months
+    // that overlap with the new upload bundle.
+    let dateColumn = "";
+    if (data[0] && "Tgl Mohon" in data[0]) dateColumn = "Tgl Mohon";
+    else if (data[0] && "Tanggal SSU" in data[0]) dateColumn = "Tanggal SSU";
+    else if (data[0] && "Tanggal SPK" in data[0]) dateColumn = "Tanggal SPK";
+    else if (data[0] && "Tanggal Billing" in data[0]) dateColumn = "Tanggal Billing";
+    else if (data[0] && "RegistrationDate" in data[0]) dateColumn = "RegistrationDate";
 
-        if (deleteError) {
-            console.error("Supabase clear error:", deleteError);
-            throw new Error(`Failed to clear older records: ${deleteError.message}`);
+    if (dateColumn) {
+        let minDate = new Date(8640000000000000);
+        let maxDate = new Date(-8640000000000000);
+
+        data.forEach(row => {
+            const val = row[dateColumn];
+            if (!val) return;
+            const d = val instanceof Date ? val : new Date(val);
+            if (!isNaN(d.getTime())) {
+                if (d < minDate) minDate = d;
+                if (d > maxDate) maxDate = d;
+            }
+        });
+
+        if (minDate <= maxDate) {
+            // Expand to the exact start and end of the months involved to wipe the full month 
+            // and replace it cleanly with the new upload.
+            const startBounds = new Date(minDate.getFullYear(), minDate.getMonth(), 1).toISOString();
+            const endBounds = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0, 23, 59, 59, 999).toISOString();
+
+            console.log(`Clearing existing ${tableName} data for months ${startBounds} to ${endBounds}...`);
+            try {
+                const { error: deleteError } = await supabase
+                    .from(tableName)
+                    .delete()
+                    .gte(`data->>${dateColumn}`, startBounds)
+                    .lte(`data->>${dateColumn}`, endBounds);
+
+                if (deleteError) {
+                    console.error("Supabase clear error:", deleteError);
+                    throw new Error(`Failed to clear older records: ${deleteError.message}`);
+                }
+            } catch (err: any) {
+                throw new Error(`Failed to clear older records: ${err.message}`);
+            }
         }
-    } catch (err: any) {
-        throw new Error(`Failed to clear older records: ${err.message}`);
+    } else {
+        // Fallback: If no date column is found, we don't wipe to avoid destroying the whole database, 
+        // but this may cause duplicates if they upload the identical file twice.
+        console.warn("No timestamp column found for duplicate prevention. Skipping purge.");
     }
 
     const total = data.length;
